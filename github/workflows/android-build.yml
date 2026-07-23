@@ -1,5 +1,5 @@
 
-name: Android Build
+name: Android Build & Release
 
 on:
   push:
@@ -40,13 +40,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Generate Gradle wrapper jar
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --gradle-version 8.7
-          fi
-          chmod +x ./gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build debug APK
         working-directory: ${{ env.PROJECT_DIR }}
@@ -59,12 +54,10 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Build unsigned release APK
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         working-directory: ${{ env.PROJECT_DIR }}
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Sign release APK
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
         with:
@@ -77,7 +70,6 @@ jobs:
           BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Upload signed release APK
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: BoloEnglish-release-apk
